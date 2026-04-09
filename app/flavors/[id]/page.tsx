@@ -10,17 +10,18 @@ export default function FlavorEditPage() {
   const supabase = createClient();
   const [flavor, setFlavor] = useState<any>(null);
   const [steps, setSteps] = useState<any[]>([]);
-  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [newSystemPrompt, setNewSystemPrompt] = useState("");
   const [newUserPrompt, setNewUserPrompt] = useState("");
   const [editingStepId, setEditingStepId] = useState<number | null>(null);
   const [editSystemPrompt, setEditSystemPrompt] = useState("");
   const [editUserPrompt, setEditUserPrompt] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from("humor_flavors").select("*").eq("id", id).single().then(({ data }) => {
-      if (data) { setFlavor(data); setName(data.name); setDescription(data.description ?? ""); }
+      if (data) { setFlavor(data); setSlug(data.slug ?? ""); setDescription(data.description ?? ""); }
     });
     loadSteps();
   }, [id]);
@@ -31,7 +32,7 @@ export default function FlavorEditPage() {
   };
 
   const handleUpdateFlavor = async () => {
-    await supabase.from("humor_flavors").update({ name, description }).eq("id", id);
+    await supabase.from("humor_flavors").update({ slug, description }).eq("id", id);
     alert("Saved!");
   };
 
@@ -44,13 +45,19 @@ export default function FlavorEditPage() {
 
   const handleAddStep = async () => {
     if (!newSystemPrompt.trim()) return;
+    setError(null);
     const maxOrder = steps.length > 0 ? Math.max(...steps.map(s => s.order_by ?? 0)) : 0;
-    await supabase.from("humor_flavor_steps").insert({
+    const { error } = await supabase.from("humor_flavor_steps").insert({
       humor_flavor_id: Number(id),
       llm_system_prompt: newSystemPrompt,
       llm_user_prompt: newUserPrompt,
-      order_by: maxOrder + 1
+      order_by: maxOrder + 1,
+      llm_input_type_id: 1,
+      llm_output_type_id: 1,
+      llm_model_id: 1,
+      humor_flavor_step_type_id: 1,
     });
+    if (error) { setError(error.message); return; }
     setNewSystemPrompt("");
     setNewUserPrompt("");
     loadSteps();
@@ -96,8 +103,8 @@ export default function FlavorEditPage() {
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4 mb-6">
         <div>
-          <label className="text-sm text-gray-400 mb-1 block">Name</label>
-          <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" value={name} onChange={(e) => setName(e.target.value)} />
+          <label className="text-sm text-gray-400 mb-1 block">Name (slug)</label>
+          <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" value={slug} onChange={(e) => setSlug(e.target.value)} />
         </div>
         <div>
           <label className="text-sm text-gray-400 mb-1 block">Description</label>
@@ -130,7 +137,7 @@ export default function FlavorEditPage() {
                 ) : (
                   <div>
                     <p className="text-xs text-gray-500 mb-1">System: <span className="text-gray-300">{step.llm_system_prompt?.slice(0, 120)}...</span></p>
-                    <p className="text-xs text-gray-500">User: <span className="text-gray-300">{step.llm_user_prompt?.slice(0, 120)}...</span></p>
+                    <p className="text-xs text-gray-500">User: <span className="text-gray-300">{step.llm_user_prompt?.slice(0, 120)}</span></p>
                   </div>
                 )}
               </div>
@@ -147,6 +154,7 @@ export default function FlavorEditPage() {
         ))}
       </div>
 
+      {error && <div className="text-red-400 text-sm mb-3">{error}</div>}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-2">
         <label className="text-sm text-gray-400">Add New Step</label>
         <textarea className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white" rows={3} placeholder="System prompt..." value={newSystemPrompt} onChange={(e) => setNewSystemPrompt(e.target.value)} />
