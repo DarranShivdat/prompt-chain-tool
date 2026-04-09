@@ -17,7 +17,20 @@ export async function POST(request: Request) {
     });
     const data = await res.json();
     if (!res.ok) return NextResponse.json({ error: JSON.stringify(data) }, { status: 500 });
-    return NextResponse.json({ captions: data });
+    
+    // Handle different response formats
+    let captions = [];
+    if (Array.isArray(data)) {
+      captions = data;
+    } else if (data.captions && Array.isArray(data.captions)) {
+      captions = data.captions;
+    } else if (data.content) {
+      captions = [data];
+    } else {
+      captions = [data];
+    }
+    
+    return NextResponse.json({ captions });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
