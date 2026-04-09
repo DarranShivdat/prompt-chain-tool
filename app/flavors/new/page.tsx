@@ -8,17 +8,24 @@ export default function NewFlavorPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
-    const { data } = await supabase
+    setError(null);
+    const { data, error } = await supabase
       .from("humor_flavors")
       .insert({ name, description })
       .select()
       .single();
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
     if (data) router.push(`/flavors/${data.id}`);
     setLoading(false);
   };
@@ -34,7 +41,7 @@ export default function NewFlavorPage() {
           <label className="text-sm text-gray-400 mb-1 block">Name</label>
           <input
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
-            placeholder="e.g. Absurdist Humor"
+            placeholder="e.g. Sad Genz"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -49,6 +56,7 @@ export default function NewFlavorPage() {
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
+        {error && <div className="text-red-400 text-sm">{error}</div>}
         <button
           onClick={handleCreate}
           disabled={loading || !name.trim()}
