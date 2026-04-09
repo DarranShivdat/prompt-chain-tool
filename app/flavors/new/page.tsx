@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function NewFlavorPage() {
-  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -13,12 +13,12 @@ export default function NewFlavorPage() {
   const supabase = createClient();
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!slug.trim()) return;
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
       .from("humor_flavors")
-      .insert({ name, description })
+      .insert({ slug, description })
       .select()
       .single();
     if (error) {
@@ -38,12 +38,12 @@ export default function NewFlavorPage() {
       </div>
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
         <div>
-          <label className="text-sm text-gray-400 mb-1 block">Name</label>
+          <label className="text-sm text-gray-400 mb-1 block">Name (slug)</label>
           <input
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
-            placeholder="e.g. Sad Genz"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. sad-genz"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
           />
         </div>
         <div>
@@ -59,7 +59,7 @@ export default function NewFlavorPage() {
         {error && <div className="text-red-400 text-sm">{error}</div>}
         <button
           onClick={handleCreate}
-          disabled={loading || !name.trim()}
+          disabled={loading || !slug.trim()}
           className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-medium"
         >
           {loading ? "Creating..." : "Create Flavor"}
